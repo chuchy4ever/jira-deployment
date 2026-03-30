@@ -1,0 +1,249 @@
+{block content}
+
+{snippet dashboard}
+<div class="row">
+	{if count($repos) === 0}
+		<div class="col-12">
+			<div class="alert alert-info">
+				<i class="bi bi-info-circle"></i> Žádné tasky k nasazení.
+			</div>
+		</div>
+	{else}
+		<div class="col-12 mb-3">
+			<div class="d-flex align-items-center gap-2">
+				<span class="badge bg-primary fs-6">{$totalTasks} tasků k nasazení</span>
+				{if count($unassignedTasks) > 0}
+					<span class="badge bg-warning text-dark fs-6">
+						<i class="bi bi-exclamation-triangle"></i>
+						{count($unassignedTasks)} bez GitHub repo:
+					</span>
+					{foreach $unassignedTasks as $task}
+						<a href="{$task->url}" target="_blank" class="badge bg-danger text-decoration-none">
+							{$task->key}
+						</a>
+					{/foreach}
+				{/if}
+			</div>
+		</div>
+
+		{foreach $repos as $repoKey => $repo}
+			{continueIf $repoKey === '_unassigned'}
+			<div class="col-12 repo-card">
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+						<h5 class="mb-0">
+							<i class="bi bi-github"></i>
+							<a href="https://github.com/{$repo->fullName}" target="_blank" class="text-white text-decoration-none">
+								{$repo->fullName}
+							</a>
+						</h5>
+						<div>
+							{if $repo->deployStatus === 'running'}
+								<span class="badge bg-warning text-dark">
+									<span class="spinner-border spinner-border-sm"></span> Deploy běží...
+								</span>
+								{if $repo->deployUrl}
+									<a href="{$repo->deployUrl}" target="_blank" class="btn btn-sm btn-outline-light ms-2">
+										<i class="bi bi-box-arrow-up-right"></i>
+									</a>
+								{/if}
+							{elseif $repo->deployStatus === 'success'}
+								<span class="badge bg-success me-2">
+									<i class="bi bi-check-circle"></i> Deploy úspěšný
+								</span>
+								{if $repo->deployUrl}
+									<a href="{$repo->deployUrl}" target="_blank" class="btn btn-sm btn-outline-light ms-1" title="Zobrazit na GitHubu">
+										<i class="bi bi-box-arrow-up-right"></i>
+									</a>
+								{/if}
+							{elseif $repo->deployStatus === 'failure'}
+								<span class="badge bg-danger me-2">
+									<i class="bi bi-x-circle"></i> Deploy selhal
+								</span>
+								{if $repo->deployUrl}
+									<a href="{$repo->deployUrl}" target="_blank" class="btn btn-sm btn-outline-danger me-2">Zobrazit</a>
+								{/if}
+								<button type="button" class="btn btn-sm btn-warning"
+									data-confirm-url="{link deploy! repoSlug => $repo->getSlug(), repoFullName => $repo->fullName}"
+									data-confirm-title="Znovu spustit deploy"
+									data-confirm-message="Opravdu chcete znovu spustit deploy pro {$repo->fullName}?"
+									onclick="confirmFromData(this)">
+									<i class="bi bi-arrow-clockwise"></i> Znovu
+								</button>
+							{else}
+								{if $repo->allTasksMerged()}
+									<button type="button" class="btn btn-sm btn-success"
+										data-confirm-url="{link deploy! repoSlug => $repo->getSlug(), repoFullName => $repo->fullName}"
+										data-confirm-title="Spustit deploy"
+										data-confirm-message="Opravdu chcete spustit deploy pro {$repo->fullName}?"
+										onclick="confirmFromData(this)">
+										<i class="bi bi-rocket-takeoff"></i> Deploy
+									</button>
+								{/if}
+							{/if}
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<table class="table table-hover mb-0">
+							<thead class="table-light">
+								<tr>
+									<th style="width:140px">Task</th>
+									<th>Summary</th>
+									<th style="width:100px">Assignee</th>
+									<th style="width:380px">Pipeline</th>
+									<th style="width:120px">Akce</th>
+								</tr>
+							</thead>
+							<tbody>
+								{foreach $repo->tasks as $task}
+										<tr class="task-row {if $task->isMerged && ($repo->deployStatus === 'success')}task-done{/if}">
+										<td>
+											<a href="{$task->url}" target="_blank" class="text-decoration-none fw-bold">
+												{$task->key}
+											</a>
+										</td>
+										<td>{$task->summary|truncate:60}</td>
+										<td><small class="text-muted">{$task->assignee ?? '—'}</small></td>
+										<td>
+											{* Pipeline badges *}
+											{* 1. Branch *}
+											{if $task->branchName}
+												<span class="badge bg-success pipeline-badge" title="{$task->branchName}">
+													<i class="bi bi-git"></i> Branch
+												</span>
+											{else}
+												<span class="badge bg-secondary pipeline-badge">
+													<i class="bi bi-git"></i> Branch
+												</span>
+											{/if}
+
+											<i class="bi bi-arrow-right text-muted"></i>
+
+											{* 2. PR *}
+											{if $task->isMerged}
+												<span class="badge bg-success pipeline-badge">
+													<i class="bi bi-check"></i> PR
+												</span>
+											{elseif $task->pullRequest}
+												{if $task->pullRequest->hasConflicts}
+													<a href="{$task->pullRequest->url}" target="_blank" class="badge bg-danger pipeline-badge text-decoration-none">
+														<i class="bi bi-x"></i> PR (konflikty)
+													</a>
+												{else}
+													<a href="{$task->pullRequest->url}" target="_blank" class="badge bg-success pipeline-badge text-decoration-none">
+														<i class="bi bi-check"></i> PR #{$task->pullRequest->number}
+													</a>
+												{/if}
+											{else}
+												<span class="badge bg-secondary pipeline-badge">
+													<i class="bi bi-dash"></i> PR
+												</span>
+											{/if}
+
+											<i class="bi bi-arrow-right text-muted"></i>
+
+											{* 3. CI *}
+											{if $task->isMerged}
+												<span class="badge bg-success pipeline-badge">
+													<i class="bi bi-check"></i> CI
+												</span>
+											{elseif $task->pullRequest}
+												{if $task->pullRequest->ciStatus === 'success'}
+													<span class="badge bg-success pipeline-badge">
+														<i class="bi bi-check-circle"></i> CI
+													</span>
+												{elseif $task->pullRequest->ciStatus === 'failure'}
+													<a href="{$task->pullRequest->url}" target="_blank" class="badge bg-danger pipeline-badge text-decoration-none">
+														<i class="bi bi-x-circle"></i> CI
+													</a>
+												{elseif $task->pullRequest->ciStatus === 'pending'}
+													<span class="badge bg-warning text-dark pipeline-badge">
+														<span class="spinner-border spinner-border-sm"></span> CI
+													</span>
+												{else}
+													<span class="badge bg-secondary pipeline-badge">
+														<i class="bi bi-dash"></i> CI
+													</span>
+												{/if}
+											{else}
+												<span class="badge bg-secondary pipeline-badge">
+													<i class="bi bi-dash"></i> CI
+												</span>
+											{/if}
+
+											<i class="bi bi-arrow-right text-muted"></i>
+
+											{* 4. Merged *}
+											{if $task->isMerged}
+												<span class="badge bg-success pipeline-badge">
+													<i class="bi bi-check-circle"></i> Merged
+												</span>
+											{else}
+												<span class="badge bg-secondary pipeline-badge">
+													<i class="bi bi-dash"></i> Merged
+												</span>
+											{/if}
+
+											<i class="bi bi-arrow-right text-muted"></i>
+
+											{* 5. Deployed *}
+											{if $repo->deployStatus === 'success' && $task->isMerged}
+												<span class="badge bg-success pipeline-badge">
+													<i class="bi bi-check-circle"></i> Deployed
+												</span>
+											{elseif $repo->deployStatus === 'running'}
+												<span class="badge bg-warning text-dark pipeline-badge">
+													<span class="spinner-border spinner-border-sm"></span> Deploy
+												</span>
+											{else}
+												<span class="badge bg-secondary pipeline-badge">
+													<i class="bi bi-dash"></i> Deployed
+												</span>
+											{/if}
+
+											{* 6. Jira Release *}
+											{if $task->fixVersion}
+												<i class="bi bi-arrow-right text-muted"></i>
+												<span class="badge bg-info pipeline-badge" title="Jira Release: {$task->fixVersion}">
+													<i class="bi bi-tag"></i> {$task->fixVersion}
+												</span>
+											{/if}
+										</td>
+										<td>
+											{if !$task->isMerged && !$task->pullRequest && $task->branchName}
+												<button type="button" class="btn btn-sm btn-outline-primary"
+													data-confirm-url="{link createPr! taskKey => $task->key, repo => $task->repository, branch => $task->branchName, summary => $task->summary, jiraUrl => $task->url}"
+													data-confirm-title="Vytvořit PR"
+													data-confirm-message="Vytvořit Pull Request pro {$task->key}?"
+													onclick="confirmFromData(this)">
+													<i class="bi bi-plus-circle"></i> PR
+												</button>
+											{elseif $task->pullRequest && $task->pullRequest->canMerge()}
+												<button type="button" class="btn btn-sm btn-outline-success"
+													data-confirm-url="{link mergePr! taskKey => $task->key, repo => $task->repository, prNumber => $task->pullRequest->number}"
+													data-confirm-title="Merge PR"
+													data-confirm-message="Opravdu mergovat PR #{$task->pullRequest->number} pro {$task->key} do masteru?"
+													onclick="confirmFromData(this)">
+													<i class="bi bi-git"></i> Merge
+												</button>
+											{elseif $task->pullRequest && !$task->pullRequest->canMerge()}
+												<a href="{$task->pullRequest->url}" target="_blank" class="btn btn-sm btn-outline-danger" title="PR nelze mergovat">
+													<i class="bi bi-exclamation-triangle"></i> Opravit
+												</a>
+											{elseif $task->isMerged}
+												<span class="text-success"><i class="bi bi-check-lg"></i></span>
+											{/if}
+										</td>
+									</tr>
+									{/foreach}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		{/foreach}
+	{/if}
+</div>
+{/snippet}
+
+{/block}

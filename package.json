@@ -1,0 +1,17 @@
+{
+    "name": "deploy-dashboard",
+    "private": true,
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "vite": "^5.4.21"
+    },
+    "dependencies": {
+        "bootstrap": "^5.3.8",
+        "bootstrap-icons": "^1.11.3",
+        "jquery": "^4.0.0",
+        "naja": "^3.3.3"
+    }
+}

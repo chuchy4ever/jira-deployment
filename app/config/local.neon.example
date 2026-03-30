@@ -1,0 +1,14 @@
+parameters:
+    jira:
+        url: %env.JIRA_URL%
+        email: %env.JIRA_EMAIL%
+        token: %env.JIRA_API_TOKEN%
+        jql: 'project in (DEV, MR, BI) AND status in ("FOR PROD RELEASE")'
+        doneStatus: DONE
+    github:
+        token: %env.GITHUB_TOKEN%
+        org: %env.GITHUB_ORG%
+    repositories:
+        # Přidej své repozitáře:
+        # org/repo-name:
+        #     workflow: build-production.yml

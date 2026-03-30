@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Deploy Dashboard</title>
+	{viteAsset('resources/js/app.js')|noescape}
+</head>
+<body data-url-refresh="{link refresh!}" data-url-force-refresh="{link forceRefresh!}">
+	<nav class="navbar navbar-dark bg-dark mb-4">
+		<div class="container">
+			<span class="navbar-brand mb-0 h1">
+				<i class="bi bi-rocket-takeoff"></i> Deploy Dashboard
+			</span>
+			<div class="d-flex align-items-center gap-3">
+				<span class="text-light small" id="last-update"></span>
+				{snippet releaseButton}
+				{if $hasRelease}
+					<button type="button" class="btn btn-sm btn-success"
+						data-confirm-url="{link finalizeRelease!}"
+						data-confirm-title="Dokončit vydání"
+						data-confirm-message="Označit release {$releaseName} jako vydaný a přesunout všechny tasky do DONE?"
+						onclick="confirmFromData(this)">
+						<i class="bi bi-check2-circle"></i> Dokončit vydání ({$releaseName})
+					</button>
+				{else}
+					<button type="button" class="btn btn-sm btn-outline-info"
+						data-confirm-url="{link createRelease!}"
+						data-confirm-title="Vytvořit Jira Release"
+						data-confirm-message="Vytvořit release s názvem {date('d.m.Y')} a přiřadit všechny tasky?"
+						onclick="confirmFromData(this)">
+						<i class="bi bi-tag"></i> Vytvořit vydání
+					</button>
+				{/if}
+				{/snippet}
+				<button type="button" class="btn btn-sm btn-outline-light" id="btn-force-refresh"
+					onclick="forceRefresh()">
+					<i class="bi bi-arrow-clockwise"></i> Obnovit z Jiry
+				</button>
+			</div>
+		</div>
+	</nav>
+
+	{snippet flashMessages}
+		{if count($flashes) > 0}
+			<div class="flash-container" id="flash-container">
+				{foreach $flashes as $flash}
+					<div class="alert alert-{$flash->type} alert-dismissible fade show" role="alert">
+						{$flash->message}
+						<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+					</div>
+				{/foreach}
+			</div>
+		{/if}
+	{/snippet}
+
+	<div class="container">
+		{include content}
+	</div>
+
+	<!-- Confirm Modal -->
+	<div class="modal fade" id="confirmModal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="confirmModalTitle">Potvrzení</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body" id="confirmModalBody">
+					Opravdu chcete provést tuto akci?
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+					<button type="button" class="btn btn-primary" id="confirmModalOk">Potvrdit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

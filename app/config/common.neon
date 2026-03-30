@@ -1,0 +1,7 @@
+application:
+	errorPresenter: Dashboard
+	mapping:
+		*: App\Presenters\*Presenter
+
+session:
+	expiration: 14 days

@@ -1,0 +1,11 @@
+services:
+	router: App\Router\RouterFactory::createRouter
+
+	- App\Model\JiraService(%jira.url%, %jira.email%, %jira.token%, %jira.jql%, %jira.doneStatus%)
+	- App\Model\GitHubService(%github.token%, %github.org%)
+	-
+		factory: App\Model\DeployService
+		arguments:
+			repositories: %repositories%
+	-
+		factory: App\Latte\ViteExtension(%appDir%/../www, %debugMode%, 'http://localhost:5173')

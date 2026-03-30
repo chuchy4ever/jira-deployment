@@ -1,0 +1,10 @@
+.idea
+/vendor/
+/node_modules/
+/temp/
+/log/
+/www/dist/
+.env
+app/config/local.neon
+*.local
+.DS_Store

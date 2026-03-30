@@ -1,0 +1,45 @@
+/* Custom overrides — most styling handled by Bootstrap */
+body { background: #eef1f5; }
+.task-row { transition: background-color 0.3s; }
+.task-row.task-done { background-color: #d1e7dd !important; }
+.pipeline-badge { font-size: 0.8rem; margin-right: 2px; }
+.repo-card { margin-bottom: 1.5rem; }
+.spinner-border-sm { width: 0.8rem; height: 0.8rem; }
+.flash-container { position: fixed; top: 1rem; right: 1rem; z-index: 1055; max-width: 400px; }
+.flash-container .alert { margin-bottom: 0.5rem; animation: fadeInRight 0.3s ease; }
+@keyframes fadeInRight {
+	from { opacity: 0; transform: translateX(50px); }
+	to { opacity: 1; transform: translateX(0); }
+}
+
+.navbar {
+	background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.repo-card .card-header {
+	background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+}
+
+.repo-card .card-header h5 a:hover {
+	text-decoration: underline !important;
+}
+
+.repo-card .card {
+	border: none;
+	box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+	border-radius: 0.5rem;
+	overflow: hidden;
+}
+
+.badge.bg-primary {
+	background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+}
+
+.pipeline-badge.bg-success {
+	background: #16a34a !important;
+}
+
+.pipeline-badge.bg-secondary {
+	background: #94a3b8 !important;
+}

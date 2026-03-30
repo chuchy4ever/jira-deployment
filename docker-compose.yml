@@ -2,8 +2,8 @@ services:
   app:
     build: .
     container_name: deploy-app
-    volumes:
-      - ./:/var/www/html
+    restart: always
+    env_file: .env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.deploy.rule=Host(`deploy.localhost`)"
@@ -14,13 +14,12 @@ services:
   traefik:
     image: traefik:v3.2
     container_name: deploy-traefik
+    restart: always
     command:
-      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

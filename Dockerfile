@@ -1,10 +1,19 @@
+FROM node:22-slim AS assets
+
+WORKDIR /build
+COPY package.json package-lock.json ./
+RUN npm ci --no-progress
+COPY vite.config.js ./
+COPY resources/ resources/
+RUN npm run build
+
+
 FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y \
         libzip-dev \
         libicu-dev \
         unzip \
-        curl \
     && docker-php-ext-install \
         intl \
         zip \
@@ -25,4 +34,16 @@ RUN echo '<Directory /var/www/html/www>\n\
 </Directory>' > /etc/apache2/conf-available/nette.conf \
     && a2enconf nette
 
+COPY docker-php.ini /usr/local/etc/php/conf.d/app.ini
+
 WORKDIR /var/www/html
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --optimize-autoloader --classmap-authoritative
+
+COPY . .
+COPY --from=assets /build/www/dist www/dist
+
+RUN chown -R www-data:www-data temp log www/dist
+
+EXPOSE 80

@@ -38,11 +38,10 @@ COPY docker-php.ini /usr/local/etc/php/conf.d/app.ini
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --optimize-autoloader --classmap-authoritative
-
 COPY . .
 COPY --from=assets /build/www/dist www/dist
+
+RUN composer install --no-dev --no-interaction --optimize-autoloader --classmap-authoritative
 
 RUN chown -R www-data:www-data temp log www/dist
 

@@ -4,22 +4,5 @@ services:
     container_name: deploy-app
     restart: always
     env_file: .env
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.deploy.rule=Host(`deploy.localhost`)"
-      - "traefik.http.services.deploy.loadbalancer.server.port=80"
-    depends_on:
-      - traefik
-
-  traefik:
-    image: traefik:v3.2
-    container_name: deploy-traefik
-    restart: always
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro

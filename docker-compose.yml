@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    container_name: deploy-app
+    volumes:
+      - ./:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.deploy.rule=Host(`deploy.localhost`)"
+      - "traefik.http.services.deploy.loadbalancer.server.port=80"
+    depends_on:
+      - traefik
+
+  traefik:
+    image: traefik:v3.2
+    container_name: deploy-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro

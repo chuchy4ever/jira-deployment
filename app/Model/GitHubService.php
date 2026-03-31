@@ -271,13 +271,22 @@ final class GitHubService
 						continue;
 					}
 
-					$matchedKey = $this->matchBranchToTaskKey($branch, $chunk);
-					if ($matchedKey === null || isset($results[$matchedKey])) {
+					$matchedKey = $this->matchBranchToTask($branch, $chunk, $taskMap);
+					if ($matchedKey === null) {
 						continue;
 					}
 
 					$isMerged = $detail->notNull('merged_at');
 					$isClosed = $detail->string('state') === 'closed';
+
+					// Open PR always takes priority over a merged/closed one
+					if (isset($results[$matchedKey])) {
+						if ($results[$matchedKey]['merged'] && !$isMerged && !$isClosed) {
+							// Replace merged result with open PR below
+						} else {
+							continue;
+						}
+					}
 
 					if ($isMerged) {
 						$results[$matchedKey] = [
@@ -357,10 +366,20 @@ final class GitHubService
 	/**
 	 * @param string[] $taskKeys
 	 */
-	private function matchBranchToTaskKey(string $branch, array $taskKeys): ?string
+	/**
+	 * @param array<string, array{repo: string, branch: string}> $taskMap
+	 */
+	private function matchBranchToTask(string $branch, array $taskKeys, array $taskMap): ?string
 	{
+		// First try exact branch match from known task branches
 		foreach ($taskKeys as $taskKey) {
-			if (str_starts_with($branch, $taskKey . '/') || $branch === $taskKey) {
+			if (isset($taskMap[$taskKey]) && $taskMap[$taskKey]['branch'] === $branch) {
+				return $taskKey;
+			}
+		}
+		// Fallback to prefix match for tasks without known branch
+		foreach ($taskKeys as $taskKey) {
+			if (!isset($taskMap[$taskKey]) && (str_starts_with($branch, $taskKey . '/') || $branch === $taskKey)) {
 				return $taskKey;
 			}
 		}
